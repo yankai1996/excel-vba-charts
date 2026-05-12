@@ -9,6 +9,7 @@ End Type
 Public Sub BuildStagingWide()
     Dim wsPiv As Worksheet
     Dim pt As PivotTable
+    Dim nRow As Long
     Dim agg As Object
     Dim allCust As Object
     Dim custList() As String
@@ -20,7 +21,8 @@ Public Sub BuildStagingWide()
     Dim vals() As Double
     Dim rk As Variant
     Dim inner As Object
-    Dim region As String, ym As String
+    Dim parts() As String
+    Dim seg As Long
 
     Set wsPiv = ThisWorkbook.Worksheets(modConfig.PIVOT_SHEET)
     On Error Resume Next
@@ -33,11 +35,13 @@ Public Sub BuildStagingWide()
         Err.Raise vbObjectError + 602, , "透视表无数据区（DataBodyRange）。"
     End If
 
+    nRow = pt.RowFields.Count
+
     Set agg = CreateObject("Scripting.Dictionary")
     Set allCust = CreateObject("Scripting.Dictionary")
 
     SeedCustomersFromPivot pt, allCust
-    AggregateFromPivotDataBody pt, agg, allCust
+    AggregateFromPivotDataBody pt, agg, allCust, nRow
 
     If agg.Count = 0 Then
         Err.Raise vbObjectError + 603, , "从透视汇总到的数据为空。"
@@ -51,13 +55,12 @@ Public Sub BuildStagingWide()
     rowKeys = SortRowKeys(agg)
     nRows = UBound(rowKeys)
 
-    ncol = 2 + nCust + IIf(modConfig.ENABLE_CUSTOMER_MERGE, 1, 0)
+    ncol = nRow + nCust + IIf(modConfig.ENABLE_CUSTOMER_MERGE, 1, 0)
     ReDim out(1 To nRows, 1 To ncol)
 
     For rIdx = 1 To nRows
         rk = rowKeys(rIdx)
-        region = Split(CStr(rk), vbTab, 2)(0)
-        ym = Split(CStr(rk), vbTab, 2)(1)
+        parts = SplitRowKey(CStr(rk), nRow)
         Set inner = agg(rk)
 
         ReDim vals(1 To nCust)
@@ -70,10 +73,11 @@ Public Sub BuildStagingWide()
             ApplyMergeForRow vals, custList
         End If
 
-        out(rIdx, 1) = region
-        out(rIdx, 2) = ym
+        For seg = 1 To nRow
+            out(rIdx, seg) = parts(seg)
+        Next seg
         For j = 1 To nCust
-            out(rIdx, 2 + j) = vals(j)
+            out(rIdx, nRow + j) = vals(j)
         Next j
         If modConfig.ENABLE_CUSTOMER_MERGE Then
             out(rIdx, ncol) = vals(nCust + 1)
@@ -85,16 +89,34 @@ Public Sub BuildStagingWide()
 
     Set wsSt = GetOrCreateSheet(modConfig.STAGING_SHEET)
     ReDim hdr(1 To ncol)
-    hdr(1) = modConfig.COL_REGION
-    hdr(2) = modConfig.COL_YM
+    For seg = 1 To nRow
+        hdr(seg) = pt.RowFields(seg).SourceName
+    Next seg
     For j = 1 To nCust
-        hdr(2 + j) = custList(j)
+        hdr(nRow + j) = custList(j)
     Next j
     If modConfig.ENABLE_CUSTOMER_MERGE Then hdr(ncol) = modConfig.MERGE_COL_CAPTION
 
     Set loSt = EnsureListWithHeaders(wsSt, modConfig.STAGING_LIST, hdr)
     WriteBody loSt, out
 End Sub
+
+Private Function SplitRowKey(ByVal rk As String, ByVal nRow As Long) As String()
+    Dim parts() As String
+    Dim raw() As String
+    Dim i As Long
+    ReDim parts(1 To nRow)
+    raw = Split(rk, vbTab)
+    For i = 1 To nRow
+        If i - 1 + LBound(raw) <= UBound(raw) Then
+            parts(i) = raw(i - 1 + LBound(raw))
+        Else
+            parts(i) = ""
+        End If
+        If Len(Trim$(parts(i))) = 0 Then parts(i) = "其他"
+    Next i
+    SplitRowKey = parts
+End Function
 
 Private Sub SeedCustomersFromPivot(ByVal pt As PivotTable, ByVal allCust As Object)
     Dim pf As PivotField
@@ -120,12 +142,13 @@ Private Sub SeedCustomersFromPivot(ByVal pt As PivotTable, ByVal allCust As Obje
     Next pi
 End Sub
 
-Private Sub AggregateFromPivotDataBody(ByVal pt As PivotTable, ByVal agg As Object, ByVal allCust As Object)
+Private Sub AggregateFromPivotDataBody(ByVal pt As PivotTable, ByVal agg As Object, ByVal allCust As Object, ByVal nRow As Long)
     Dim c As Range
     Dim pc As PivotCell
-    Dim region As String, ym As String, cust As String
+    Dim cust As String
     Dim rk As String
     Dim inner As Object
+    Dim v As Double
 
     For Each c In pt.DataBodyRange.Cells
         On Error Resume Next
@@ -137,19 +160,15 @@ Private Sub AggregateFromPivotDataBody(ByVal pt As PivotTable, ByVal agg As Obje
         On Error GoTo 0
 
         If pc.PivotCellType <> xlPivotCellValue Then GoTo NextCell
-        If pc.RowItems.Count < 2 Then GoTo NextCell
+        If pc.RowItems.Count <> nRow Then GoTo NextCell
         If pc.ColumnItems.Count < 1 Then GoTo NextCell
 
-        region = Trim$(CStr(pc.RowItems(1).Caption))
-        ym = Trim$(CStr(pc.RowItems(2).Caption))
+        rk = BuildRowKeyFromPivotCell(pc, nRow)
         cust = NormalizePivotCaption(CStr(pc.ColumnItems(1).Caption))
         v = PivotCellValueToDouble(c)
 
-        If Len(region) = 0 Then region = "其他"
-        If Len(ym) = 0 Then ym = "其他"
         If Len(cust) = 0 Then cust = "其他"
 
-        rk = region & vbTab & ym
         If Not agg.Exists(rk) Then agg.Add rk, CreateObject("Scripting.Dictionary")
         Set inner = agg(rk)
         If inner.Exists(cust) Then
@@ -164,6 +183,20 @@ Private Sub AggregateFromPivotDataBody(ByVal pt As PivotTable, ByVal agg As Obje
 NextCell:
     Next c
 End Sub
+
+Private Function BuildRowKeyFromPivotCell(ByVal pc As PivotCell, ByVal nRow As Long) As String
+    Dim i As Long
+    Dim s As String
+    Dim t As String
+
+    For i = 1 To nRow
+        t = Trim$(CStr(pc.RowItems(i).Caption))
+        If Len(t) = 0 Then t = "其他"
+        If i > 1 Then s = s & vbTab
+        s = s & t
+    Next i
+    BuildRowKeyFromPivotCell = s
+End Function
 
 Private Function NormalizePivotCaption(ByVal s As String) As String
     s = Trim$(s)
@@ -303,7 +336,6 @@ Private Function SortRowKeys(ByVal agg As Object) As String()
     Dim arr() As String
     Dim k As Variant, n As Long, i As Long, j As Long
     Dim t As String
-    Dim ra As String, ya As String, rb As String, yb As String
 
     n = agg.Count
     ReDim arr(1 To n)
@@ -315,17 +347,32 @@ Private Function SortRowKeys(ByVal agg As Object) As String()
 
     For i = 1 To n - 1
         For j = i + 1 To n
-            ra = Split(arr(i), vbTab, 2)(0)
-            ya = Split(arr(i), vbTab, 2)(1)
-            rb = Split(arr(j), vbTab, 2)(0)
-            yb = Split(arr(j), vbTab, 2)(1)
-            If StrComp(rb, ra, vbTextCompare) < 0 _
-               Or (StrComp(rb, ra, vbTextCompare) = 0 And yb < ya) Then
+            If RowKeyLess(arr(j), arr(i)) Then
                 t = arr(i): arr(i) = arr(j): arr(j) = t
             End If
         Next j
     Next i
     SortRowKeys = arr
+End Function
+
+Private Function RowKeyLess(ByVal a As String, ByVal b As String) As Boolean
+    Dim sa() As String, sb() As String
+    Dim i As Long, ubA As Long, ubB As Long, u As Long
+    Dim cmp As Long
+
+    sa = Split(a, vbTab)
+    sb = Split(b, vbTab)
+    ubA = UBound(sa)
+    ubB = UBound(sb)
+    u = Application.WorksheetFunction.Min(ubA, ubB)
+
+    For i = LBound(sa) To u
+        cmp = StrComp(sa(i), sb(i), vbTextCompare)
+        If cmp < 0 Then RowKeyLess = True: Exit Function
+        If cmp > 0 Then RowKeyLess = False: Exit Function
+    Next i
+
+    RowKeyLess = (ubA < ubB)
 End Function
 
 Private Function GetOrCreateSheet(ByVal sheetName As String) As Worksheet

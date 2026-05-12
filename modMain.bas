@@ -1,14 +1,13 @@
 Attribute VB_Name = "modMain"
 Option Explicit
 
-' 入口：清洗 -> 透视（含形状校验与刷新）-> Staging 宽表（小额合并）-> 堆叠柱图
+' 入口：刷新/校验用户自建透视 -> Staging 宽表（多行标签 + 可选小额合并）-> 堆叠柱图
 Public Sub Run_Pipeline()
     On Error GoTo EH
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
 
-    modData.BuildCleanTable
-    modPivot.EnsurePivotAndRefresh
+    modPivot.RefreshExistingPivot
     modStaging.BuildStagingWide
     modCharts.BuildOrRefreshChart
 

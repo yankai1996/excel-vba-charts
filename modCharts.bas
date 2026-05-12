@@ -24,6 +24,7 @@ Public Sub BuildOrRefreshChart()
     wsChart.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
     On Error GoTo 0
 
+    ' 整张表含表头：左侧 n 列为多级分类（与透视行字段顺序一致，最右行为最内层），右侧为客户及合并列系列
     Set src = lo.Range
 
     Set chObj = wsChart.ChartObjects.Add(Left:=24, Top:=24, Width:=720, Height:=420)
