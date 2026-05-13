@@ -2,25 +2,25 @@ Attribute VB_Name = "modCharts"
 Option Explicit
 
 Public Sub BuildOrRefreshChart()
-    Dim wsSt As Worksheet
+    Dim wsTgt As Worksheet
     Dim lo As ListObject
     Dim chObj As ChartObject
     Dim src As Range
     Dim leftPts As Double, topPts As Double
 
-    Set wsSt = ThisWorkbook.Worksheets(modConfig.STAGING_SHEET)
+    Set wsTgt = ThisWorkbook.Worksheets(modConfig.TARGET_SHEET)
     On Error Resume Next
-    Set lo = wsSt.ListObjects(modConfig.STAGING_LIST)
+    Set lo = wsTgt.ListObjects(modConfig.TARGET_LIST)
     On Error GoTo 0
     If lo Is Nothing Then
-        Err.Raise vbObjectError + 701, , "未找到 Staging 表 " & modConfig.STAGING_LIST & "。"
+        Err.Raise vbObjectError + 701, , "未找到目标宽表 " & modConfig.TARGET_LIST & "。"
     End If
     If lo.DataBodyRange Is Nothing Then
-        Err.Raise vbObjectError + 702, , "Staging 表无数据行。"
+        Err.Raise vbObjectError + 702, , "目标宽表无数据行。"
     End If
 
     On Error Resume Next
-    wsSt.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
+    wsTgt.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
     On Error GoTo 0
 
     ' 整张表含表头：左侧 n 列为多级分类，右侧为客户及合并列系列
@@ -31,7 +31,7 @@ Public Sub BuildOrRefreshChart()
     If leftPts < 12# Then leftPts = 24#
     If topPts < 12# Then topPts = 24#
 
-    Set chObj = wsSt.ChartObjects.Add(Left:=leftPts, Top:=topPts, Width:=720, Height:=420)
+    Set chObj = wsTgt.ChartObjects.Add(Left:=leftPts, Top:=topPts, Width:=720, Height:=420)
     chObj.Name = modConfig.CHART_OBJECT_NAME
 
     With chObj.Chart

@@ -5,11 +5,11 @@ Option Explicit
 Public Const PIVOT_SHEET As String = "透视"
 Public Const PIVOT_TABLE_NAME As String = "ptSales"
 
-Public Const STAGING_SHEET As String = "Staging"
-Public Const STAGING_LIST As String = "tblStage"
+Public Const TARGET_SHEET As String = "Target"
+Public Const TARGET_LIST As String = "tblTarget"
 
-' 嵌入图与 tblStage 同在 STAGING_SHEET 上（悬浮于网格之上）
-Public Const CHART_OBJECT_NAME As String = "chtStagingStack"
+' 嵌入图与 tblTarget 同在 TARGET_SHEET 上（悬浮于网格之上）
+Public Const CHART_OBJECT_NAME As String = "chtTargetStack"
 
 '--- Pivot field names (列/值校验；行字段名与个数由用户透视决定) ---
 Public Const COL_CUSTOMER As String = "客户"

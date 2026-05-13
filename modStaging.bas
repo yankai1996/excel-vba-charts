@@ -84,10 +84,10 @@ Public Sub BuildStagingWide()
         End If
     Next rIdx
 
-    Dim wsSt As Worksheet, loSt As ListObject
+    Dim wsTgt As Worksheet, loTgt As ListObject
     Dim hdr() As String
 
-    Set wsSt = GetOrCreateSheet(modConfig.STAGING_SHEET)
+    Set wsTgt = GetOrCreateSheet(modConfig.TARGET_SHEET)
     ReDim hdr(1 To ncol)
     For seg = 1 To nRow
         hdr(seg) = pt.RowFields(seg).SourceName
@@ -97,8 +97,8 @@ Public Sub BuildStagingWide()
     Next j
     If modConfig.ENABLE_CUSTOMER_MERGE Then hdr(ncol) = modConfig.MERGE_COL_CAPTION
 
-    Set loSt = EnsureListWithHeaders(wsSt, modConfig.STAGING_LIST, hdr)
-    WriteBody loSt, out
+    Set loTgt = EnsureListWithHeaders(wsTgt, modConfig.TARGET_LIST, hdr)
+    WriteBody loTgt, out
 End Sub
 
 Private Function SplitRowKey(ByVal rk As String, ByVal nRow As Long) As String()
