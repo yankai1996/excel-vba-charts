@@ -8,7 +8,7 @@ Public Const PIVOT_TABLE_NAME As String = "ptSales"
 Public Const STAGING_SHEET As String = "Staging"
 Public Const STAGING_LIST As String = "tblStage"
 
-Public Const CHART_SHEET As String = "图表"
+' 嵌入图与 tblStage 同在 STAGING_SHEET 上（悬浮于网格之上）
 Public Const CHART_OBJECT_NAME As String = "chtStagingStack"
 
 '--- Pivot field names (列/值校验；行字段名与个数由用户透视决定) ---

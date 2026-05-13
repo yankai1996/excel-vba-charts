@@ -18,14 +18,14 @@
 5. **`Ctrl + S`** 保存工作簿。在 **信任中心** 中允许运行宏（按公司策略设置）。
 6. 在 VBA 编辑器中打开 **`modMain`**，将光标放在 **`Run_Pipeline`** 过程内，按 **`F5`** 运行；或在 Excel 里通过 **宏** 列表运行 **`Run_Pipeline`**。
 
-运行成功后：会 **刷新** 指定透视、**校验** 布局、在 **Staging** 工作表生成/覆盖 **`tblStage`** 宽表，并在 **图表** 工作表创建/替换名为 **`chtStagingStack`** 的堆叠柱形图。
+运行成功后：会 **刷新** 指定透视、**校验** 布局、在 **`STAGING_SHEET`** 上生成/覆盖 **`tblStage`**，并在 **同一工作表** 上以嵌入 **`ChartObject`**（**`CHART_OBJECT_NAME`**，默认 `chtStagingStack`）**悬浮** 显示堆叠柱形图（图放在宽表 **右侧**，避免压住表体）。
 
 ---
 
 ## 二、使用方式（日常）
 
 1. 在 Excel 中更新明细或透视数据源后，建议先在界面上 **右键透视 → 刷新**（宏里也会执行一次 `PivotCache.Refresh`，但本地先刷新可减少异常）。
-2. 再次运行 **`Run_Pipeline`**。每次运行会 **重建** Staging 表与 **同名** 图表对象（旧图会被删掉再建），避免残留旧系列。
+2. 再次运行 **`Run_Pipeline`**。每次运行会 **重建** Staging 表，并在 **同一张 Staging 工作表** 上 **删除并重建** 同名嵌入图，避免残留旧系列。
 
 ---
 
@@ -41,8 +41,7 @@
 | **`PIVOT_TABLE_NAME`** | `ptSales` | 透视表 **名称**（右键透视表 →「数据透视表选项」或名称框中可见）。 |
 | **`STAGING_SHEET`** | `Staging` | 输出宽表的工作表 **名称**（不存在时宏会创建）。 |
 | **`STAGING_LIST`** | `tblStage` | Staging **`ListObject` 表名**。 |
-| **`CHART_SHEET`** | `图表` | 放置嵌入图的工作表 **名称**（不存在时宏会创建）。 |
-| **`CHART_OBJECT_NAME`** | `chtStagingStack` | 图表 **`ChartObject` 名称**（用于每次删除后重建，勿与工作簿内其他图重名）。 |
+| **`CHART_OBJECT_NAME`** | `chtStagingStack` | 与 **`tblStage` 同页** 的嵌入图 **`ChartObject` 名称**（每次运行先删后建；勿与工作簿内其他图重名）。 |
 
 ### 3.2 透视字段名（与数据源列名 / 透视字段源名一致）
 
@@ -99,6 +98,7 @@
 ## 六、图表说明
 
 - 类型：**堆叠柱形图**（`xlColumnStacked`），数据源为 **`tblStage` 整块区域**（含表头），`PlotBy:=xlColumns`。
+- **位置**：图与 **`tblStage`** 同在 **`STAGING_SHEET`**，为 **嵌入图**（悬浮于单元格之上）；默认放在 **列表区域右侧**，必要时可在 Excel 中手动拖动调整。
 - **前 N 列**（N = 行字段数）为 **多级分类轴**；右侧为客户（及合并列）系列。
 - 数值轴：尽量使 **比例轴包含 0**，便于阅读正负堆叠。
 
@@ -112,7 +112,7 @@
 | 透视刷新失败 | 数据源无效、字段被删、缓存损坏 |
 | 校验失败 | 列名/值字段名与 `COL_*` 不一致，或值区不是「求和」 |
 | Staging 为空 | 无数据区，或 `PivotCell` 行项数与行字段数不一致 |
-| 图表未更新 | `STAGING_SHEET` / `STAGING_LIST` 或 `CHART_*` 配置与界面不一致 |
+| 图表未更新 | `STAGING_SHEET` / `STAGING_LIST` 或 **`CHART_OBJECT_NAME`** 与界面不一致 |
 
 ---
 

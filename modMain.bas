@@ -1,7 +1,7 @@
 Attribute VB_Name = "modMain"
 Option Explicit
 
-' 入口：刷新/校验用户自建透视 -> Staging 宽表（多行标签 + 可选小额合并）-> 堆叠柱图
+' 入口：刷新/校验用户自建透视 -> Staging 宽表（多行标签 + 可选小额合并）-> 同页堆叠柱图（嵌入 ChartObject）
 Public Sub Run_Pipeline()
     On Error GoTo EH
     Application.ScreenUpdating = False

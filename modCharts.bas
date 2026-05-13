@@ -2,10 +2,11 @@ Attribute VB_Name = "modCharts"
 Option Explicit
 
 Public Sub BuildOrRefreshChart()
-    Dim wsChart As Worksheet, wsSt As Worksheet
+    Dim wsSt As Worksheet
     Dim lo As ListObject
     Dim chObj As ChartObject
     Dim src As Range
+    Dim leftPts As Double, topPts As Double
 
     Set wsSt = ThisWorkbook.Worksheets(modConfig.STAGING_SHEET)
     On Error Resume Next
@@ -18,16 +19,19 @@ Public Sub BuildOrRefreshChart()
         Err.Raise vbObjectError + 702, , "Staging 表无数据行。"
     End If
 
-    Set wsChart = GetOrCreateSheet(modConfig.CHART_SHEET)
-
     On Error Resume Next
-    wsChart.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
+    wsSt.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
     On Error GoTo 0
 
-    ' 整张表含表头：左侧 n 列为多级分类（与透视行字段顺序一致，最右行为最内层），右侧为客户及合并列系列
+    ' 整张表含表头：左侧 n 列为多级分类，右侧为客户及合并列系列
     Set src = lo.Range
 
-    Set chObj = wsChart.ChartObjects.Add(Left:=24, Top:=24, Width:=720, Height:=420)
+    leftPts = lo.Range.Left + lo.Range.Width + 20#
+    topPts = lo.Range.Top
+    If leftPts < 12# Then leftPts = 24#
+    If topPts < 12# Then topPts = 24#
+
+    Set chObj = wsSt.ChartObjects.Add(Left:=leftPts, Top:=topPts, Width:=720, Height:=420)
     chObj.Name = modConfig.CHART_OBJECT_NAME
 
     With chObj.Chart
@@ -70,15 +74,3 @@ Private Sub EnsureValueAxisCrossesZero(ByVal ch As Chart)
     End If
     On Error GoTo 0
 End Sub
-
-Private Function GetOrCreateSheet(ByVal sheetName As String) As Worksheet
-    Dim ws As Worksheet
-    On Error Resume Next
-    Set ws = ThisWorkbook.Worksheets(sheetName)
-    On Error GoTo 0
-    If ws Is Nothing Then
-        Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
-        ws.Name = sheetName
-    End If
-    Set GetOrCreateSheet = ws
-End Function
