@@ -11,9 +11,16 @@ Public Const TARGET_LIST As String = "tblTarget"
 ' Embedded chart floats on TARGET_SHEET next to tblTarget
 Public Const CHART_OBJECT_NAME As String = "chtTargetStack"
 
-'--- Pivot field SourceNames (must match pivot layout) ---
-Public Const COL_CUSTOMER As String = "Customer"
-Public Const COL_REVENUE As String = "Revenue"
+'--- Pivot layout mode ---
+' False: N row fields + exactly 1 column field (series) + 1 Sum value field.
+' True:  N row fields (no column fields) + 1 Sum value; last row field = series, first N-1 = categories (requires RowFields.Count >= 2).
+Public Const STACK_SERIES_FROM_LAST_ROW As Boolean = False
+
+'--- Pivot field SourceNames (optional strict match) ---
+' Leave empty to accept any column / value field SourceName (discovered at runtime).
+' If non-empty, ValidatePivotShape checks they match the pivot (case-insensitive).
+Public Const COL_CUSTOMER As String = ""
+Public Const COL_REVENUE As String = ""
 
 ' Label used for blank pivot captions / empty row labels (must not collide with a real customer name)
 Public Const BLANK_LABEL As String = "Other"

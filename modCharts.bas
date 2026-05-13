@@ -23,7 +23,7 @@ Public Sub BuildOrRefreshChart()
     wsTgt.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
     On Error GoTo 0
 
-    ' Full table with header: left columns = row hierarchy, right = customer series (+ optional merge column)
+    ' Full table with header: left columns = category axis, right = stack series columns (+ optional merge column)
     Set src = lo.Range
 
     leftPts = lo.Range.Left + lo.Range.Width + 20#
