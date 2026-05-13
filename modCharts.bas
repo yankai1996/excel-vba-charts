@@ -13,17 +13,17 @@ Public Sub BuildOrRefreshChart()
     Set lo = wsTgt.ListObjects(modConfig.TARGET_LIST)
     On Error GoTo 0
     If lo Is Nothing Then
-        Err.Raise vbObjectError + 701, , "未找到目标宽表 " & modConfig.TARGET_LIST & "。"
+        Err.Raise vbObjectError + 701, , "Target list object not found: " & modConfig.TARGET_LIST & "."
     End If
     If lo.DataBodyRange Is Nothing Then
-        Err.Raise vbObjectError + 702, , "目标宽表无数据行。"
+        Err.Raise vbObjectError + 702, , "Target table has no data rows."
     End If
 
     On Error Resume Next
     wsTgt.ChartObjects(modConfig.CHART_OBJECT_NAME).Delete
     On Error GoTo 0
 
-    ' 整张表含表头：左侧 n 列为多级分类，右侧为客户及合并列系列
+    ' Full table with header: left columns = row hierarchy, right = customer series (+ optional merge column)
     Set src = lo.Range
 
     leftPts = lo.Range.Left + lo.Range.Width + 20#

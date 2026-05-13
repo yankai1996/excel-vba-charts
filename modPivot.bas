@@ -17,10 +17,10 @@ Public Sub RefreshExistingPivot()
     On Error GoTo EH
 
     If pt Is Nothing Then
-        Err.Raise vbObjectError + 511, , "未找到透视表 " & modConfig.PIVOT_TABLE_NAME & "（工作表 """ & modConfig.PIVOT_SHEET & """）。"
+        Err.Raise vbObjectError + 511, , "PivotTable not found: " & modConfig.PIVOT_TABLE_NAME & " on sheet """ & modConfig.PIVOT_SHEET & """."
     End If
     If pt.DataBodyRange Is Nothing Then
-        Err.Raise vbObjectError + 512, , "透视表无数据区（DataBodyRange），请检查数据源与字段布局。"
+        Err.Raise vbObjectError + 512, , "PivotTable has no DataBodyRange; check source data and field layout."
     End If
 
     On Error Resume Next
@@ -30,7 +30,7 @@ Public Sub RefreshExistingPivot()
         errMsg = Err.Description
         Err.Clear
         On Error GoTo EH
-        Err.Raise errNum, , "透视刷新失败：" & errMsg
+        Err.Raise errNum, , "PivotCache.Refresh failed: " & errMsg
     End If
     Err.Clear
     On Error GoTo EH
@@ -46,25 +46,25 @@ End Sub
 
 Public Sub ValidatePivotShape(ByVal pt As PivotTable)
     If pt.RowFields.Count < 1 Then
-        Err.Raise vbObjectError, , "透视行区至少需要 1 个行字段。"
+        Err.Raise vbObjectError, , "Pivot row area must have at least one row field."
     End If
     If pt.ColumnFields.Count <> 1 Then
-        Err.Raise vbObjectError, , "透视列区必须为 1 个字段（客户）。"
+        Err.Raise vbObjectError, , "Pivot column area must have exactly one field (customer)."
     End If
     If pt.DataFields.Count <> 1 Then
-        Err.Raise vbObjectError, , "透视值区必须为 1 个度量。"
+        Err.Raise vbObjectError, , "Pivot data area must have exactly one data field."
     End If
 
     If StrComp(pt.ColumnFields(1).SourceName, modConfig.COL_CUSTOMER, vbTextCompare) <> 0 Then
-        Err.Raise vbObjectError, , "列区字段须为 " & modConfig.COL_CUSTOMER & "（当前：" & pt.ColumnFields(1).SourceName & "）。"
+        Err.Raise vbObjectError, , "Column field must be " & modConfig.COL_CUSTOMER & " (found: " & pt.ColumnFields(1).SourceName & ")."
     End If
 
     Dim valField As PivotField
     Set valField = pt.DataFields(1).PivotField
     If StrComp(valField.SourceName, modConfig.COL_REVENUE, vbTextCompare) <> 0 Then
-        Err.Raise vbObjectError, , "值区度量须基于字段 " & modConfig.COL_REVENUE & "（当前源字段：" & valField.SourceName & "）。"
+        Err.Raise vbObjectError, , "Data field must be based on " & modConfig.COL_REVENUE & " (found: " & valField.SourceName & ")."
     End If
     If pt.DataFields(1).Function <> xlSum Then
-        Err.Raise vbObjectError, , "值区度量须为「求和」（当前聚合函数不是求和）。"
+        Err.Raise vbObjectError, , "Data field must aggregate with Sum (current function is not Sum)."
     End If
 End Sub

@@ -29,10 +29,10 @@ Public Sub BuildStagingWide()
     Set pt = wsPiv.PivotTables(modConfig.PIVOT_TABLE_NAME)
     On Error GoTo 0
     If pt Is Nothing Then
-        Err.Raise vbObjectError + 601, , "未找到透视表 " & modConfig.PIVOT_TABLE_NAME & "。"
+        Err.Raise vbObjectError + 601, , "PivotTable not found: " & modConfig.PIVOT_TABLE_NAME & "."
     End If
     If pt.DataBodyRange Is Nothing Then
-        Err.Raise vbObjectError + 602, , "透视表无数据区（DataBodyRange）。"
+        Err.Raise vbObjectError + 602, , "PivotTable has no DataBodyRange."
     End If
 
     nRow = pt.RowFields.Count
@@ -44,10 +44,10 @@ Public Sub BuildStagingWide()
     AggregateFromPivotDataBody pt, agg, allCust, nRow
 
     If agg.Count = 0 Then
-        Err.Raise vbObjectError + 603, , "从透视汇总到的数据为空。"
+        Err.Raise vbObjectError + 603, , "No data aggregated from pivot."
     End If
     If allCust.Count = 0 Then
-        Err.Raise vbObjectError + 604, , "未从透视列字段解析到任何客户。"
+        Err.Raise vbObjectError + 604, , "No customers found from pivot column field."
     End If
 
     custList = SortCustomersByGlobalAbs(allCust)
@@ -113,7 +113,7 @@ Private Function SplitRowKey(ByVal rk As String, ByVal nRow As Long) As String()
         Else
             parts(i) = ""
         End If
-        If Len(Trim$(parts(i))) = 0 Then parts(i) = "其他"
+        If Len(Trim$(parts(i))) = 0 Then parts(i) = modConfig.BLANK_LABEL
     Next i
     SplitRowKey = parts
 End Function
@@ -135,7 +135,7 @@ Private Sub SeedCustomersFromPivot(ByVal pt As PivotTable, ByVal allCust As Obje
         On Error Resume Next
         If pi.Visible Then
             cust = NormalizePivotCaption(pi.Caption)
-            If Len(cust) = 0 Then cust = "其他"
+            If Len(cust) = 0 Then cust = modConfig.BLANK_LABEL
             If Not allCust.Exists(cust) Then allCust.Add cust, 0#
         End If
         On Error GoTo 0
@@ -167,7 +167,7 @@ Private Sub AggregateFromPivotDataBody(ByVal pt As PivotTable, ByVal agg As Obje
         cust = NormalizePivotCaption(CStr(pc.ColumnItems(1).Caption))
         v = PivotCellValueToDouble(c)
 
-        If Len(cust) = 0 Then cust = "其他"
+        If Len(cust) = 0 Then cust = modConfig.BLANK_LABEL
 
         If Not agg.Exists(rk) Then agg.Add rk, CreateObject("Scripting.Dictionary")
         Set inner = agg(rk)
@@ -191,7 +191,7 @@ Private Function BuildRowKeyFromPivotCell(ByVal pc As PivotCell, ByVal nRow As L
 
     For i = 1 To nRow
         t = Trim$(CStr(pc.RowItems(i).Caption))
-        If Len(t) = 0 Then t = "其他"
+        If Len(t) = 0 Then t = modConfig.BLANK_LABEL
         If i > 1 Then s = s & vbTab
         s = s & t
     Next i
@@ -201,7 +201,7 @@ End Function
 Private Function NormalizePivotCaption(ByVal s As String) As String
     s = Trim$(s)
     If StrComp(s, "(blank)", vbTextCompare) = 0 Then
-        NormalizePivotCaption = "其他"
+        NormalizePivotCaption = modConfig.BLANK_LABEL
     Else
         NormalizePivotCaption = s
     End If

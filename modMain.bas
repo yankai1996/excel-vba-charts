@@ -1,7 +1,7 @@
 Attribute VB_Name = "modMain"
 Option Explicit
 
-' 入口：刷新/校验用户自建透视 -> Target 宽表（modStaging.BuildStagingWide；多行标签 + 可选小额合并）-> 同页堆叠柱图（嵌入 ChartObject）
+' Entry: RefreshExistingPivot -> BuildStagingWide (target wide table) -> BuildOrRefreshChart
 Public Sub Run_Pipeline()
     On Error GoTo EH
     Application.ScreenUpdating = False
@@ -13,11 +13,11 @@ Public Sub Run_Pipeline()
 
     Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
-    MsgBox "流程已完成。", vbInformation
+    MsgBox "Pipeline finished.", vbInformation
     Exit Sub
 
 EH:
     Application.Calculation = xlCalculationAutomatic
     Application.ScreenUpdating = True
-    MsgBox "运行中断：" & Err.Description, vbCritical, "Run_Pipeline"
+    MsgBox "Pipeline failed: " & Err.Description, vbCritical, "Run_Pipeline"
 End Sub
